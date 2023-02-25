@@ -11,7 +11,7 @@ from discord import default_permissions
 conn = sqlite3.connect('soundy.db')
 c = conn.cursor() # create a cursor
 # create a table with the following values guild id, musical channel, bully channel, wise channel, general channel
-c.execute('''CREATE TABLE IF NOT EXISTS soundy (guild_id text, musical_channel integer, bully_channel integer, wise_channel integer, general_channel integer, api_key text)''')
+c.execute('''CREATE TABLE IF NOT EXISTS soundy (guild_id text, musical_channel integer, bully_channel integer, wise_channel integer, welcome_channel integer, api_key text)''')
 
 
 from discord import Intents # to use intents
@@ -53,7 +53,7 @@ async def ping(ctx):
     embed.add_field(name="Commands", value="`/ping` - Responds with pong\n`/hello` - Says hello to a user\n`/help` - Shows the help message", inline=False)
     await ctx.respond(embed=embed, ephemeral=True)
 
-channels = ["musical", "bully", "wise", "general"]
+channels = ["musical", "bully", "wise", "welcome"]
 async def get_channel(ctx: discord.AutocompleteContext):
     return [channel_name for channel_name in channels if channel_name.startswith(ctx.value)]
 
@@ -98,12 +98,23 @@ async def setapi(ctx, apikey: str):
 @bot.event
 async def on_member_join(member: discord.Member):
     guild = member.guild
-    channel = await bot.fetch_channel(1072806328524869715)
+    try: 
+        c.execute("SELECT * FROM soundy WHERE guild_id = ?", (guild.id,))
+        data = c.fetchone()
+        channel = data[4]
+    except : return
+    channel = await bot.fetch_channel(channel)
     await channel.send(f"Hello {member.mention}, you are **NOT** welcome to {guild.name}!")
 
 @bot.event
 async def on_member_leave(member: discord.Member):
-    channel = await bot.fetch_channel(1072806328524869715)
+    guild = member.guild
+    try: 
+        c.execute("SELECT * FROM soundy WHERE guild_id = ?", (guild.id,))
+        data = c.fetchone()
+        channel = data[4]
+    except : return
+    channel = await bot.fetch_channel(channel)
     await channel.send(f"Goodbye {member.name}, you were **not** wanted here in the first place!")
     
 @bot.event
