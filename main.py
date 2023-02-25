@@ -9,7 +9,7 @@ from discord import default_permissions
 conn = sqlite3.connect('./data/soundy.db')
 c = conn.cursor() # create a cursor
 # create a table with the following values guild id, musical channel, bully channel, wise channel, general channel
-c.execute('''CREATE TABLE IF NOT EXISTS soundy (guild_id text, musical_channel integer, bully_channel integer, wise_channel integer, welcome_channel integer, api_key text)''')
+c.execute('''CREATE TABLE IF NOT EXISTS soundy (guild_id text, musical_channel integer, bully_channel integer, wise_channel integer, welcome_channel integer, api_key text, welcome_message text, leave_message text)''')
 
 
 from discord import Intents # to use intents
@@ -76,18 +76,46 @@ async def setchannel(ctx, scope: str, channel: discord.TextChannel):
 @bot.command(name="setapi", description="Sets the OpenAI API key")
 @default_permissions(administrator=True)
 async def setapi(ctx, apikey: str):     
-    try: data = c.execute("SELECT guild_id FROM soundy WHERE guild_id = ?", (ctx.guild.id,)).fetchone()  #
+    try: data = c.execute("SELECT guild_id FROM soundy WHERE guild_id = ?", (ctx.guild.id,)).fetchone()  # get the guild id from the database
     except : data = None # if the guild is not in the database, data will be None
     if data == None:
-        c.execute("INSERT INTO soundy VALUES (?, ?, ?, ?, ?, ?)", (str(ctx.guild.id), None, None, None, None, apikey)) # insert the guild id, and the api key
+        c.execute("INSERT INTO soundy VALUES (?, ?, ?, ?, ?, ?, ?, ?)", (str(ctx.guild.id), None, None, None, None, apikey, None, None)) # insert the guild id, and the api key
         conn.commit() # commit the changes
-        await ctx.respond("The API key has been set!", ephemeral = True) # send a message to the user
     else:
         c.execute("UPDATE soundy SET api_key = ? WHERE guild_id = ?", (apikey, str(ctx.guild.id))) # update the api key
         conn.commit() # commit the changes
-        await ctx.respond("The API key has been set!", ephemeral = True) # send a message to the user
+    await ctx.respond("The API key has been set!", ephemeral = True) # send a message to the user
 
-
+@bot.command(name="setwelcome", description="Sets the welcome message")
+@default_permissions(administrator=True)
+async def setwelcome(ctx, message: str):
+    try: 
+        c.execute("SELECT * FROM soundy WHERE guild_id = ?", (ctx.guild.id,)) # get the guild id from the database
+        data = c.fetchone()
+    except : data = None
+    if data == None :
+        c.execute("INSERT INTO soundy VALUES (?, ?, ?, ?, ?, ?, ?, ?)", (str(ctx.guild.id), None, None, None, None, None, message, None)) # insert the guild id, and the api key
+        conn.commit() # commit the changes
+    else:
+        c.execute("UPDATE soundy SET welcome_message = ? WHERE guild_id = ?", (message, str(ctx.guild.id))) # update the api key
+        conn.commit()
+    await ctx.respond("The welcome message has been set!", ephemeral = True) # send a message to the user
+    
+@bot.command(name="setleave", description="Sets the member leave message")
+@default_permissions(administrator=True)
+async def setwelcome(ctx, message: str):
+    try: 
+        c.execute("SELECT * FROM soundy WHERE guild_id = ?", (ctx.guild.id,)) # get the guild id from the database
+        data = c.fetchone()
+    except : data = None
+    if data == None :
+        c.execute("INSERT INTO soundy VALUES (?, ?, ?, ?, ?, ?, ?, ?)", (str(ctx.guild.id), None, None, None, None, None, None, message)) # insert the guild id, and the api key
+        conn.commit() # commit the changes
+    else:
+        c.execute("UPDATE soundy SET leave_message = ? WHERE guild_id = ?", (message, str(ctx.guild.id))) # update the api key
+        conn.commit()
+    await ctx.respond("The member leave message has been set!", ephemeral = True) # send a message to the user    
+        
 
 #Events ###############################################################################################################################################################
 
@@ -95,25 +123,37 @@ async def setapi(ctx, apikey: str):
 #Member Join and Leave Events
 @bot.event
 async def on_member_join(member: discord.Member):
-    guild = member.guild
+    guild = member.guild 
     try: 
-        c.execute("SELECT * FROM soundy WHERE guild_id = ?", (guild.id,))
+        print("Member joined")
+        c.execute("SELECT * FROM soundy WHERE guild_id = ?", (guild.id,)) # get the guild id from the database
+        print("Got data")
         data = c.fetchone()
+        print(data)
         channel = data[4]
-    except : return
+        print(channel)
+        try: message = data[6] 
+        except: message = f"Hello {member.mention}, you are **NOT** welcome to {guild.name}!"
+    except Exception as e: print(e); return
     channel = await bot.fetch_channel(channel)
-    await channel.send(f"Hello {member.mention}, you are **NOT** welcome to {guild.name}!")
+    if message != f"Hello {member.mention}, you are **NOT** welcome to {guild.name}!":
+        message = f"{message} {member.mention}"
+    await channel.send(message)
 
 @bot.event
-async def on_member_leave(member: discord.Member):
+async def on_member_remove(member: discord.Member):
     guild = member.guild
     try: 
         c.execute("SELECT * FROM soundy WHERE guild_id = ?", (guild.id,))
         data = c.fetchone()
         channel = data[4]
-    except : return
+        try: message = data[7]
+        except: message = f"Goodbye {member.name}, you were **not** wanted here in the first place!"
+    except Exception as e: print(e); return
     channel = await bot.fetch_channel(channel)
-    await channel.send(f"Goodbye {member.name}, you were **not** wanted here in the first place!")
+    if message != f"Goodbye {member.name}, you were **not** wanted here in the first place!":
+        message = f"{message} {member.name}"
+    await channel.send(message)
     
 @bot.event
 #when the bot is added to a new server, we want to send a message to the user who added the bot to the server
