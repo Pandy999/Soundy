@@ -130,7 +130,7 @@ async def on_application_command_error(ctx: discord.ApplicationContext, error: E
     if str(error) == "Application Command raised an exception: Forbidden: 403 Forbidden (error code: 50013): Missing Permissions":
         await ctx.respond("I don't have the permissions to do that", ephemeral=True)
     else:
-        embed = discord.Embed(title="Help", description="An unknown error occured; please try again later. If the error persists, you can contact us in our support server: https://discord.gg/Psdxy69ZQn. Please send the following LOGS to the support server: \`\`\`py\n"+str(error)+"\`\`\`", ephemeral=True, color=discord.Color.nitro_pink())
+        embed = discord.Embed(title="Help", description="An unknown error occured; please try again later. If the error persists, you can contact us in our support server: https://discord.gg/Psdxy69ZQn. Please send the following LOGS to the support server: ```py\n"+str(error)+"```", color=discord.Color.nitro_pink())
         await ctx.respond(embed=embed, ephemeral=True)
 
 
