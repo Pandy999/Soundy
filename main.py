@@ -2,7 +2,7 @@ import discord # to use pycord
 import os # to get the token from the .env file
 import logging # to log errors
 import openai # to use openai
-from chat import chatgpt_response, chatgpt_response2, chatgpt_response3
+from chat import chatgpt_response1, chatgpt_response2, chatgpt_response3
 import sqlite3
 from discord import default_permissions
 
@@ -129,9 +129,9 @@ async def on_guild_join(guild: discord.Guild):
 async def on_application_command_error(ctx: discord.ApplicationContext, error: Exception):
     if str(error) == "Application Command raised an exception: Forbidden: 403 Forbidden (error code: 50013): Missing Permissions":
         await ctx.respond("I don't have the permissions to do that", ephemeral=True)
-    else:   
-        await ctx.respond("An unknown error occured; please try again later. If the error persists, you can contact us in our support server: https://discord.gg/Psdxy69ZQn. Please send the following LOGS to the support server: \`\`\`py\n"+str(error)+"\`\`\`", ephemeral=True)
-        print(error)
+    else:
+        embed = discord.Embed(title="Help", description="An unknown error occured; please try again later. If the error persists, you can contact us in our support server: https://discord.gg/Psdxy69ZQn. Please send the following LOGS to the support server: \`\`\`py\n"+str(error)+"\`\`\`", ephemeral=True, color=discord.Color.nitro_pink())
+        await ctx.respond(embed=embed, ephemeral=True)
 
 
 #On Message Events
@@ -159,7 +159,7 @@ async def on_message(message):
     if message.channel.id == wise_channel:
         if message.content.startswith("-"): return 
         reply = await message.reply("Thinking of wise things to say...")
-        response = await chatgpt_response(message.content)
+        response = await chatgpt_response1(message.content)
         await reply.edit(response)
     
     if message.channel.id == bully_channel:
