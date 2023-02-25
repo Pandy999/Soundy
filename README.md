@@ -17,7 +17,7 @@ python main.py
 
 ## Documentation 
 
-For more information about the project, please refer to the (https://github.com/Pandy999/Soundy/wiki)[WIKI].
+For more information about the project, please refer to the (WIKI)[https://github.com/Pandy999/Soundy/wiki].
 
 ## Support 
 
