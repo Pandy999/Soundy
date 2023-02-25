@@ -14,4 +14,4 @@ For more information about the project, please refer to the documentation.
 
 ## Support 
 
-If you have any questions or need help, please reach out to us at [dev.soundy@gmail.com](mailto:dev.soundy@gmail.com).
+If you have any questions or need help, please either file a [bug report](https://github.com/Pandy999/Soundy/issues/new/choose) or open a [discussion thread](https://github.com/Pandy999/Soundy/discussions).
