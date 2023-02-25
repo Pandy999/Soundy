@@ -5,7 +5,7 @@ This is a README file for your project. It should provide an overview of what yo
 ## Getting Started
 
 1. Download the source code from the repository. 
-2. Add your discord bot token i the `.env.example` file and rename it to `.env`.
+2. Add your discord bot token in the `.env.example` file and rename it to `.env`.
 3. Install any necessary dependencies with
 ```bash
 pip install -r requirements.txt
