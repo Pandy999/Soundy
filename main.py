@@ -6,7 +6,7 @@ from chat import chatgpt_response1, chatgpt_response2, chatgpt_response3
 import sqlite3
 from discord import default_permissions
 
-conn = sqlite3.connect('soundy.db')
+conn = sqlite3.connect('./data/soundy.db')
 c = conn.cursor() # create a cursor
 # create a table with the following values guild id, musical channel, bully channel, wise channel, general channel
 c.execute('''CREATE TABLE IF NOT EXISTS soundy (guild_id text, musical_channel integer, bully_channel integer, wise_channel integer, welcome_channel integer, api_key text)''')
@@ -192,7 +192,7 @@ async def on_message(message):
 async def on_ready():
     print(f'Soundy has connected to Discord!') # print the bot's name when it connects
     await bot.change_presence(status=discord.Status.idle, activity=discord.Activity(type=discord.ActivityType.watching, name=f"you."))
-    channel = await bot.fetch_channel(1072806328524869715)
+    channel = await bot.fetch_channel(1079072349611110430)
     await channel.send(f"Heh, I'm back boys.")
 
 

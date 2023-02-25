@@ -5,8 +5,12 @@ This is a README file for your project. It should provide an overview of what yo
 ## Getting Started
 
 1. Download the source code from the repository. 
-2. Install any necessary dependencies. 
-3. Run the program! 
+2. Install any necessary dependencies with
+```bash
+pip install -r requirements.txt
+```
+3. Run the program with 
+```python main.py```
 
 ## Documentation 
 
