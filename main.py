@@ -2,9 +2,7 @@ import discord # to use pycord
 import os # to get the token from the .env file
 import logging # to log errors
 import openai # to use openai
-from chat import chatgpt_response
-from chat2 import chatgpt_response2
-from chat3 import chatgpt_response3
+from chat import chatgpt_response, chatgpt_response2, chatgpt_response3
 import sqlite3
 from discord import default_permissions
 
