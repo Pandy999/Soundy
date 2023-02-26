@@ -1,8 +1,15 @@
-## Getting Started
+# Soundy
+Soundy is a simple discord bot that can talk with you in different channels. It also sends welcome and goodbye messages.
 
-1. Download the source code from the repository. 
-2. Add your discord bot token in the `.env.example` file and rename it to `.env`.
-3. Install any necessary dependencies with
+# Getting Started
+## Requirements
+1. Python 3.10 installed on your machine. You can install it [here](https://www.python.org/downloads/). **BE SURE TO DOWNLOAD AND INSTALL THE CORRECT VERSION**.
+2. Pip installed on your system. You can install it [here](https://pip.pypa.io/en/stable/installation/).
+3. A discord bot token. You can grab one [here](https://discord.com/developers/applications).
+## Installing & running
+3. Download the source code from the repository. 
+4. Add your discord bot token in the `.env.example` file and rename it to `.env`.
+5. Install any necessary dependencies with
 ```bash
 pip install -r requirements.txt
 ```
