@@ -2,7 +2,7 @@ import discord # to use pycord
 import os # to get the token from the .env file
 import logging # to log errors
 import openai # to use openai
-from chat import chatgpt_response1, chatgpt_response2, chatgpt_response3
+from chat import chatgpt_response
 import sqlite3
 from discord import default_permissions
 
@@ -191,7 +191,7 @@ async def on_message(message):
     music_channel = data[1]
     bully_channel = data[2]
     wise_channel = data[3]
-    general_channel = data[4]
+    welcome_channel = data[4]
     api_key = data[5]
     openai.api_key = api_key
     
@@ -199,19 +199,19 @@ async def on_message(message):
     if message.channel.id == wise_channel:
         if message.content.startswith("-"): return 
         reply = await message.reply("Thinking of wise things to say...")
-        response = await chatgpt_response1(message.content)
+        response = await chatgpt_response(message.content,1)
         await reply.edit(response)
     
     if message.channel.id == bully_channel:
         if message.content.startswith("-"): return
         reply = await message.reply("Please stop bullying me...")
-        response = await chatgpt_response2(message.content)
+        response = await chatgpt_response(message.content,2)
         await reply.edit(response)          
        
     if message.channel.id == music_channel:
         if message.content.startswith("-"): return
         reply = await message.reply("Ayo, thinking...")
-        response = await chatgpt_response3(message.content)
+        response = await chatgpt_response(message.content,3)
         await reply.edit(response)                   
     
     for i in banned_words:
