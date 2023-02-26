@@ -2,11 +2,11 @@ from dotenv import load_dotenv
 import os
 import openai
 import re
-from main import bot
+# from main import bot
 import datetime
 
 load_dotenv()
-
+bot = f"f"
 token = os.getenv('TOKEN') # get the token from the .env file
 openai_apikey = os.getenv('OPENAI_APIKEY')
 
@@ -22,20 +22,11 @@ async def chatgpt_response(message, type):
         prompt = prompt2
     elif type == 3:
         prompt = prompt3
-    messages = await message.channel.history(limit=5).flatten()
+    messages = await message.channel.history(limit=7).flatten()
     messages.reverse()
     gmt_time = ""
     for msg in messages:
         content = msg.content
-        mentions = re.findall(r"<@!?\d+>", content)
-        for mention in mentions:
-            #get the user id
-            uid = mention[2:-1]
-            #get the user
-            user = await bot.fetch_user(uid)
-            #replace the mention with the name
-            content = content.replace(mention, f"{user.name}#{user.discriminator}:<@{uid}>")
-            content = content + "\nSYSTEM: Mentions have been replaced with name#discriminator:id. Botator uses only the mention, not the name or the discriminator. The discriminator is only used to prevent name clashes."
         gmt_time = msg.created_at.strftime("%H:%M:%S")
         prompt += f"{msg.author} ({gmt_time} GMT-0): {content}\n"
     timenow = datetime.datetime.now().strftime("%H:%M:%S")
