@@ -1,7 +1,3 @@
-# README
-
-This is a README file for your project. It should provide an overview of what your project is about, and how to get started using it.
-
 ## Getting Started
 
 1. Download the source code from the repository. 
