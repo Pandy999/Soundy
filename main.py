@@ -199,19 +199,19 @@ async def on_message(message):
     if message.channel.id == wise_channel:
         if message.content.startswith("-"): return 
         reply = await message.reply("Thinking of wise things to say...")
-        response = await chatgpt_response(message.content,1)
+        response = await chatgpt_response(message,1)
         await reply.edit(response)
     
     if message.channel.id == bully_channel:
         if message.content.startswith("-"): return
         reply = await message.reply("Please stop bullying me...")
-        response = await chatgpt_response(message.content,2)
+        response = await chatgpt_response(message,2)
         await reply.edit(response)          
        
     if message.channel.id == music_channel:
         if message.content.startswith("-"): return
         reply = await message.reply("Ayo, thinking...")
-        response = await chatgpt_response(message.content,3)
+        response = await chatgpt_response(message,3)
         await reply.edit(response)                   
     
     for i in banned_words:

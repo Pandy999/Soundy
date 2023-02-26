@@ -19,8 +19,7 @@ async def chatgpt_response(message, type):
         prompt = prompt2
     elif type == 3:
         prompt = prompt3
-    prompt = prompt + f"\n\nHuman:{message} \n\nAI:"
-
+    prompt = prompt + f"\n\n{message.author.name}:{message.content} \n\nAI:"
 
     response = await openai.Completion.acreate(
         model="text-davinci-003",
