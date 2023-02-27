@@ -1,5 +1,5 @@
 # Soundy
-Soundy is a simple discord bot that can talk with you in different channels. It also sends welcome and goodbye messages.
+Soundy is a simple AI chatbot that has different personalities.
 
 # Getting Started
 ## Requirements
