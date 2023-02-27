@@ -156,14 +156,10 @@ async def on_member_remove(member: discord.Member):
     await channel.send(message)
     
 @bot.event
-#when the bot is added to a new server, we want to send a message to the user who added the bot to the server
 async def on_guild_join(guild: discord.Guild):
-    #we get the audit log entry of the bot being added to the server
     audit_log_entry = await guild.audit_logs(limit=1, action=discord.AuditLogAction.bot_add).flatten()
-    #we get the user who added the bot to the server
     user = audit_log_entry[0].user
-    #we send a message to the user who added the bot to the server
-    await user.send(f"") #Here a message explaining how to use and setup the server, and that they have 18$ free with openai but then it's paid, and where to find an api key
+    await user.send(f"Hey! For more information on this bot please check https://github.com/Pandy999/Soundy/wiki. Don't forget that you have 18$ free with OpenAI, but after this you are going to have to pay to continue using openAI.")
 
 @bot.event
 async def on_application_command_error(ctx: discord.ApplicationContext, error: Exception):
@@ -239,7 +235,7 @@ async def on_message(message):
 async def on_ready():
     print(f'Soundy has connected to Discord!') # print the bot's name when it connects
     await bot.change_presence(status=discord.Status.idle, activity=discord.Activity(type=discord.ActivityType.watching, name=f"you."))
-    channel = await bot.fetch_channel(welcome_channel)
+    channel = await bot.fetch_channel(1079072349611110430)
     await channel.send(f"Heh, I'm back boys.")
 
 
