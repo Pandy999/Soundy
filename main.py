@@ -9,7 +9,7 @@ from discord import default_permissions
 conn = sqlite3.connect('./data/soundy.db')
 c = conn.cursor() # create a cursor
 # create a table with the following values guild id, musical channel, bully channel, wise channel, general channel
-c.execute('''CREATE TABLE IF NOT EXISTS soundy (guild_id text, musical_channel integer, bully_channel integer, wise_channel integer, welcome_channel integer, api_key text, welcome_message text, leave_message text)''')
+c.execute('''CREATE TABLE IF NOT EXISTS soundy (guild_id text, musical_channel integer, bully_channel integer, wise_channel integer, welcome_channel integer, api_key text, welcome_message text, leave_message text,  western_channel integer)''')
 
 
 from discord import Intents # to use intents
@@ -51,7 +51,7 @@ async def ping(ctx):
     embed.add_field(name="Commands", value="`/ping` - Responds with pong\n`/hello` - Says hello to a user\n`/help` - Shows the help message", inline=False)
     await ctx.respond(embed=embed, ephemeral=True)
 
-channels = ["musical", "bully", "wise", "welcome"]
+channels = ["musical", "bully", "wise", "welcome", "western"]
 async def get_channel(ctx: discord.AutocompleteContext):
     return [channel_name for channel_name in channels if channel_name.startswith(ctx.value)]
 
@@ -79,7 +79,7 @@ async def setapi(ctx, apikey: str):
     try: data = c.execute("SELECT guild_id FROM soundy WHERE guild_id = ?", (ctx.guild.id,)).fetchone()  # get the guild id from the database
     except : data = None # if the guild is not in the database, data will be None
     if data == None:
-        c.execute("INSERT INTO soundy VALUES (?, ?, ?, ?, ?, ?, ?, ?)", (str(ctx.guild.id), None, None, None, None, apikey, None, None)) # insert the guild id, and the api key
+        c.execute("INSERT INTO soundy VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", (str(ctx.guild.id), None, None, None, None, apikey, None, None, None)) # insert the guild id, and the api key
         conn.commit() # commit the changes
     else:
         c.execute("UPDATE soundy SET api_key = ? WHERE guild_id = ?", (apikey, str(ctx.guild.id))) # update the api key
@@ -94,7 +94,7 @@ async def setwelcome(ctx, message: str):
         data = c.fetchone()
     except : data = None
     if data == None :
-        c.execute("INSERT INTO soundy VALUES (?, ?, ?, ?, ?, ?, ?, ?)", (str(ctx.guild.id), None, None, None, None, None, message, None)) # insert the guild id, and the api key
+        c.execute("INSERT INTO soundy VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", (str(ctx.guild.id), None, None, None, None, None, message, None, None)) # insert the guild id, and the api key
         conn.commit() # commit the changes
     else:
         c.execute("UPDATE soundy SET welcome_message = ? WHERE guild_id = ?", (message, str(ctx.guild.id))) # update the api key
@@ -109,7 +109,7 @@ async def setwelcome(ctx, message: str):
         data = c.fetchone()
     except : data = None
     if data == None :
-        c.execute("INSERT INTO soundy VALUES (?, ?, ?, ?, ?, ?, ?, ?)", (str(ctx.guild.id), None, None, None, None, None, None, message)) # insert the guild id, and the api key
+        c.execute("INSERT INTO soundy VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", (str(ctx.guild.id), None, None, None, None, None, None, message, None)) # insert the guild id, and the api key
         conn.commit() # commit the changes
     else:
         c.execute("UPDATE soundy SET leave_message = ? WHERE guild_id = ?", (message, str(ctx.guild.id))) # update the api key
@@ -192,6 +192,7 @@ async def on_message(message):
     bully_channel = data[2]
     wise_channel = data[3]
     welcome_channel = data[4]
+    western_channel = data[8]
     api_key = data[5]
     openai.api_key = api_key
     
@@ -212,7 +213,13 @@ async def on_message(message):
         if message.content.startswith("-"): return
         reply = await message.reply("Ayo, thinking...")
         response = await chatgpt_response(message,3)
-        await reply.edit(response)                   
+        await reply.edit(response)      
+        
+    if message.channel.id == western_channel:
+        if message.content.startswith("-"): return
+        reply = await message.reply("Thinking partner...")
+        response = await chatgpt_response(message,4)
+        await reply.edit(response)                
     
     for i in banned_words:
         if message.content.lower().find(i) != -1:
