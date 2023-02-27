@@ -27,5 +27,3 @@ For more information about the project, please refer to the [WIKI](https://githu
 ## Support 
 
 If you have any questions or need help, please either file a [bug report](https://github.com/Pandy999/Soundy/issues/new/choose) or open a [discussion thread](https://github.com/Pandy999/Soundy/discussions).
-
-<iframe src="https://discord.com/widget?id=1079851484700754000&theme=dark" width="350" height="500" allowtransparency="true" frameborder="0" sandbox="allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-scripts"></iframe>
