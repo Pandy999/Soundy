@@ -233,10 +233,5 @@ async def on_message(message):
 async def on_ready():
     print(f'Soundy has connected to Discord!') # print the bot's name when it connects
     await bot.change_presence(status=discord.Status.idle, activity=discord.Activity(type=discord.ActivityType.watching, name=f"you."))
-    channel = await bot.fetch_channel(1079072349611110430)
-    await channel.send(f"Heh, I'm back boys.")
-
-
-    
 
 bot.run(token) # runs the bot
