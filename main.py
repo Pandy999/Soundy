@@ -125,15 +125,12 @@ async def setwelcome(ctx, message: str):
 async def on_member_join(member: discord.Member):
     guild = member.guild 
     try: 
-        print("Member joined")
         c.execute("SELECT * FROM soundy WHERE guild_id = ?", (guild.id,)) # get the guild id from the database
-        print("Got data")
         data = c.fetchone()
-        print(data)
         channel = data[4]
-        print(channel)
         try: message = data[6] 
         except: message = f"Hello {member.mention}, you are **NOT** welcome to {guild.name}!"
+        if message == None: message = f"Hello {member.mention}, you are **NOT** welcome to {guild.name}!"
     except Exception as e: print(e); return
     channel = await bot.fetch_channel(channel)
     if message != f"Hello {member.mention}, you are **NOT** welcome to {guild.name}!":
@@ -149,6 +146,7 @@ async def on_member_remove(member: discord.Member):
         channel = data[4]
         try: message = data[7]
         except: message = f"Goodbye {member.name}, you were **not** wanted here in the first place!"
+        if message == None: message = f"Goodbye {member.name}, you were **not** wanted here in the first place!"
     except Exception as e: print(e); return
     channel = await bot.fetch_channel(channel)
     if message != f"Goodbye {member.name}, you were **not** wanted here in the first place!":
