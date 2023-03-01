@@ -15,7 +15,7 @@ Soundy is a simple AI chatbot that has different personalities.
 ```bash
 pip install -r requirements.txt
 ```
-3. Run the program with 
+6. Run the program with 
 ```bash
 python main.py
 ```
