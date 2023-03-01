@@ -5,6 +5,7 @@ import openai # to use openai
 from chat import chatgpt_response
 import sqlite3
 from discord import default_permissions
+from Soundy.banned_words import banned_words
 
 conn = sqlite3.connect('./data/soundy.db')
 c = conn.cursor() # create a cursor
@@ -115,7 +116,8 @@ async def setwelcome(ctx, message: str):
         c.execute("UPDATE soundy SET leave_message = ? WHERE guild_id = ?", (message, str(ctx.guild.id))) # update the api key
         conn.commit()
     await ctx.respond("The member leave message has been set!", ephemeral = True) # send a message to the user    
-        
+
+
 
 #Events ###############################################################################################################################################################
 
@@ -154,10 +156,14 @@ async def on_member_remove(member: discord.Member):
     await channel.send(message)
     
 @bot.event
+#when the bot is added to a new server, we want to send a message to the user who added the bot to the server
 async def on_guild_join(guild: discord.Guild):
+    #we get the audit log entry of the bot being added to the server
     audit_log_entry = await guild.audit_logs(limit=1, action=discord.AuditLogAction.bot_add).flatten()
+    #we get the user who added the bot to the server
     user = audit_log_entry[0].user
-    await user.send(f"Hey! For more information on this bot please check https://github.com/Pandy999/Soundy/wiki. Don't forget that you have 18$ free with OpenAI, but after this you are going to have to pay to continue using openAI.")
+    #we send a message to the user who added the bot to the server
+    await user.send(f"") #Here a message explaining how to use and setup the server, and that they have 18$ free with openai but then it's paid, and where to find an api key
 
 @bot.event
 async def on_application_command_error(ctx: discord.ApplicationContext, error: Exception):
@@ -170,7 +176,7 @@ async def on_application_command_error(ctx: discord.ApplicationContext, error: E
 
 #On Message Events
 
-banned_words = ["carpet"]
+bad_words = banned_words
 helloes = ["hello", "hi", "hey"]
 
 @bot.event
@@ -215,7 +221,7 @@ async def on_message(message):
         response = await chatgpt_response(message,4)
         await reply.edit(response)                
     
-    for i in banned_words:
+    for i in bad_words:
         if message.content.lower().find(i) != -1:
             await message.delete()
             await message.channel.send(f"{message.author.mention}, I'm gonna have to wash your tongue with soap!")
@@ -233,5 +239,8 @@ async def on_message(message):
 async def on_ready():
     print(f'Soundy has connected to Discord!') # print the bot's name when it connects
     await bot.change_presence(status=discord.Status.idle, activity=discord.Activity(type=discord.ActivityType.watching, name=f"you."))
+
+
+    
 
 bot.run(token) # runs the bot
