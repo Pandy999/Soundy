@@ -5,7 +5,6 @@ import openai # to use openai
 from chat import chatgpt_response
 import sqlite3
 from discord import default_permissions
-from Soundy.banned_words import banned_words
 
 conn = sqlite3.connect('./data/soundy.db')
 c = conn.cursor() # create a cursor
@@ -117,7 +116,52 @@ async def setwelcome(ctx, message: str):
         conn.commit()
     await ctx.respond("The member leave message has been set!", ephemeral = True) # send a message to the user    
 
+# Moderation Commands
 
+@bot.command(name="ban", description="Bans a user from the server.")
+@default_permissions(administrator=True)
+async def ban(ctx, member: discord.Member):
+    await member.ban()
+    await ctx.respond(f"{member.mention} has been banned from the server!", ephemeral = True)
+    
+@bot.command(name="unban", description="Unbans a user from the server.")
+@default_permissions(administrator=True)
+async def unban(ctx, member: discord.User):
+    await ctx.guild.unban(member)
+    await ctx.respond(f"{member.mention} has been unbanned from the server!", ephemeral = True)
+    
+    
+@bot.command(name="kick", description="Kicks a user from the server.")
+@default_permissions(administrator=True)
+async def kick(ctx, member: discord.Member):
+    await member.kick()
+    await ctx.responmd(f"{member.mention} has been kicked from the server!", ephemeral = True)
+    
+@bot.command(name="mute", description="Mutes a user from the server.")
+@default_permissions(administrator=True)
+async def mute(ctx, member: discord.Member):
+    await member.edit(mute=True)
+    await ctx.respond(f"{member.mention} has been muted from the server!", ephemeral = True)
+
+@bot.command(name="unmute", description="Mutes a user from the server.")
+@default_permissions(administrator=True)
+async def unmute(ctx, member: discord.Member):
+    await member.edit(mute=False)
+    await ctx.respond(f"{member.mention} has been unmuted from the server!", ephemeral = True)
+    
+@bot.command(name="timeout", description="Times out a user from the server.")
+@default_permissions(administrator=True)
+async def timeout(ctx, member: discord.Member):
+    await member.timeout()
+    await ctx.respond(f"{member.mention} has been timed out from the server!", ephemeral = True)
+    
+# Bot moderation commands
+@bot.command(name="banbot", description="Bans a user from using the bot.")
+@default_permissions(administrator=True)
+async def banbot(ctx, member: discord.Member):
+    c.execute("INSERT INTO banned VALUES (?)", (member.id,))
+    conn.commit()
+    await ctx.respond(f"{member.mention} has been banned from using the bot!", ephemeral = True)
 
 #Events ###############################################################################################################################################################
 
@@ -175,8 +219,6 @@ async def on_application_command_error(ctx: discord.ApplicationContext, error: E
 
 
 #On Message Events
-
-bad_words = banned_words
 helloes = ["hello", "hi", "hey"]
 
 @bot.event
@@ -221,11 +263,6 @@ async def on_message(message):
         response = await chatgpt_response(message,4)
         await reply.edit(response)                
     
-    for i in bad_words:
-        if message.content.lower().find(i) != -1:
-            await message.delete()
-            await message.channel.send(f"{message.author.mention}, I'm gonna have to wash your tongue with soap!")
-
     if message.author == bot.user: return # if the message is from the bot, ignore it
     
     for o in helloes:
@@ -239,13 +276,6 @@ async def on_message(message):
 async def on_ready():
     print(f'Soundy has connected to Discord!') # print the bot's name when it connects
     await bot.change_presence(status=discord.Status.idle, activity=discord.Activity(type=discord.ActivityType.watching, name=f"you."))
-    channel = await bot.fetch_channel(1079072349611110430)
-    await channel.send(f"Heh, I'm back boys.")
 
-
-    
-
-
-    
 
 bot.run(token) # runs the bot
