@@ -5,7 +5,9 @@ import openai # to use openai
 from chat import chatgpt_response
 import sqlite3
 from discord import default_permissions
+from better_profanity import profanity
 
+profanity.load_censor_words_from_file("./Soundy/banned_words.txt")
 conn = sqlite3.connect('./data/soundy.db')
 c = conn.cursor() # create a cursor
 # create a table with the following values guild id, musical channel, bully channel, wise channel, general channel
@@ -103,7 +105,7 @@ async def setwelcome(ctx, message: str):
     
 @bot.command(name="setleave", description="Sets the member leave message")
 @default_permissions(administrator=True)
-async def setwelcome(ctx, message: str):
+async def setleave(ctx, message: str):
     try: 
         c.execute("SELECT * FROM soundy WHERE guild_id = ?", (ctx.guild.id,)) # get the guild id from the database
         data = c.fetchone()
@@ -162,6 +164,15 @@ async def banbot(ctx, member: discord.Member):
     c.execute("INSERT INTO banned VALUES (?)", (member.id,))
     conn.commit()
     await ctx.respond(f"{member.mention} has been banned from using the bot!", ephemeral = True)
+    
+@bot.command(name="unbanbot", description="Unbans a user from using the bot.")
+@default_permissions(administrator=True)
+async def unbanbot(ctx, member: discord.Member):
+    c.execute("DELETE FROM banned WHERE user_id = ?", (member.id,))
+    conn.commit()
+    await ctx.respond(f"{member.mention} has been unbanned from using the bot!", ephemeral = True)
+    
+
 
 #Events ###############################################################################################################################################################
 
@@ -263,12 +274,15 @@ async def on_message(message):
         response = await chatgpt_response(message,4)
         await reply.edit(response)                
     
+    if profanity.contains_profanity(message.content.lower()):
+        await message.delete()
+        await message.channel.send(f"{message.author.mention}, I'm gonna have to wash your tongue with soap!")
+
     if message.author == bot.user: return # if the message is from the bot, ignore it
     
     for o in helloes:
         if message.content.lower().find(o) != -1:
             await message.add_reaction('👋')
-
 
 #Bot Events
 
@@ -278,4 +292,7 @@ async def on_ready():
     await bot.change_presence(status=discord.Status.idle, activity=discord.Activity(type=discord.ActivityType.watching, name=f"you."))
 
 
+    
+
 bot.run(token) # runs the bot
+
