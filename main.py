@@ -271,8 +271,6 @@ async def on_message(message):
 
 @bot.event
 async def on_ready():
-    data = c.fetchone()
-    welcome_channel = data[4]
     print(f'Soundy has connected to Discord!') # print the bot's name when it connects
     await bot.change_presence(status=discord.Status.idle, activity=discord.Activity(type=discord.ActivityType.watching, name=f"you."))
 
