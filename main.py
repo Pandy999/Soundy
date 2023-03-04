@@ -1,14 +1,10 @@
 import discord # to use pycord
 import os # to get the token from the .env file
-
 import openai # to use openai
 from chat import response as respond # to use the response function from chat.py
 from discord import default_permissions
-from better_profanity import profanity
 from config import conn, c, bot
-
 from discord.commands import option # to use options
-
 from dotenv import load_dotenv # to load the token from a .env file
 load_dotenv() # load the .env file
 token = os.getenv('TOKEN') # get the token from the .env file
