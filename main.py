@@ -1,24 +1,19 @@
 import discord # to use pycord
 import os # to get the token from the .env file
-import logging # to log errors
+
 import openai # to use openai
 from chat import response as respond # to use the response function from chat.py
 from discord import default_permissions
 from better_profanity import profanity
 from config import conn, c, bot
 
-profanity.load_censor_words_from_file("./banned_words.txt")
-
-
-
-logging.basicConfig(level=logging.INFO) # log errors
+profanity.load_censor_words_from_file("./moderation/banned_words.txt")
 
 from discord.commands import option # to use options
 
 from dotenv import load_dotenv # to load the token from a .env file
 load_dotenv() # load the .env file
 token = os.getenv('TOKEN') # get the token from the .env file
-openai_apikey = os.getenv('OPENAI_APIKEY')
 
 models = ["davinci", "chatGPT"]
 
@@ -151,21 +146,6 @@ async def timeout(ctx, member: discord.Member):
     await member.timeout()
     await ctx.respond(f"{member.mention} has been timed out from the server!", ephemeral = True)
     
-# Bot moderation commands
-@bot.command(name="banbot", description="Bans a user from using the bot.")
-@default_permissions(administrator=True)
-async def banbot(ctx, member: discord.Member):
-    c.execute("INSERT INTO banned VALUES (?)", (member.id,))
-    conn.commit()
-    await ctx.respond(f"{member.mention} has been banned from using the bot!", ephemeral = True)
-    
-@bot.command(name="unbanbot", description="Unbans a user from using the bot.")
-@default_permissions(administrator=True)
-async def unbanbot(ctx, member: discord.Member):
-    c.execute("DELETE FROM banned WHERE user_id = ?", (member.id,))
-    conn.commit()
-    await ctx.respond(f"{member.mention} has been unbanned from using the bot!", ephemeral = True)
-    
 
 # Set Model
 async def autocomplete(ctx: discord.AutocompleteContext):
@@ -184,24 +164,7 @@ async def model(ctx: discord.ApplicationContext, model: str = "davinci"):
     conn.commit()
     await ctx.respond("Model selected!", ephemeral=True)
 
-# Profanity Moderation commands
-@bot.command(name="addprofanity", description="Adds a word to the profanity filter.")
-@default_permissions(administrator=True)
-async def addprofanity(self, word: str):
-    with open("./Soundy/banned_words.txt", "a", encoding="utf-8") as f:
-        f.write("".join([f"{w}\n" for w in word]))
-        
-    profanity.load_censor_words_from_file("./Soundy/banned_words.txt")
-    
-@bot.command(name="removeprofanity", description="Removes a word from the profanity filter.")
-@default_permissions(administrator=True)
-async def removeprofanity(self, word: str):
-    with open("./Soundy/banned_words.txt", "r", encoding="utf-8") as f:
-        stored = [w.strip() for w in f.readlines()] 
-    with open("./Soundy/banned_words.txt", "w", encoding="utf-8") as f:
-        f.write("".join([f"{w}\n" for w in stored if w not in word]))
-    
-    profanity.load_censor_words_from_file("./Soundy/banned_words.txt")
+
 #Events ###############################################################################################################################################################
 
 
@@ -303,10 +266,6 @@ async def on_message(message):
         reply = await message.reply("Thinking partner...")
         response = await respond(message,4)
         await reply.edit(response)                
-    
-    if profanity.contains_profanity(message.content.lower()):
-        await message.delete()
-        await message.channel.send(f"{message.author.mention}, I'm gonna have to wash your tongue with soap!")
 
     if message.author == bot.user: return # if the message is from the bot, ignore it
     

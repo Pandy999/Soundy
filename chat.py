@@ -2,8 +2,9 @@ from dotenv import load_dotenv
 import os
 import openai
 import datetime
-from config import c, bot   
+from config import c, bot, debug   
 import re
+
 
 
 load_dotenv()
@@ -37,7 +38,7 @@ async def response(message, type):
             content = msg.content
             prompt += f"{msg.author} : {content}\n"
         prompt = prompt + f"{message.author}: {message.content}\nSoundy: "
-        print('using davinci')
+        await debug(prompt)
         response = await openai.Completion.acreate(
             model="text-davinci-003",
             prompt=prompt,
@@ -68,7 +69,7 @@ async def response(message, type):
             msgs.append({"role": role, "content": f"{content}", "name": name})
         msgs.append({"role": "user", "content": f"{message.content}", "name": message.author.name})
             
-        print('using chatgpt')
+        await debug(str(msgs))
         response = await openai.ChatCompletion.acreate(
             model="gpt-3.5-turbo",
             temperature=2,
