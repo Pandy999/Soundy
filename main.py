@@ -1,38 +1,27 @@
 import discord # to use pycord
 import os # to get the token from the .env file
-import logging # to log errors
+
 import openai # to use openai
-from chat import chatgpt_response
-import sqlite3
+from chat import response as respond # to use the response function from chat.py
 from discord import default_permissions
 from better_profanity import profanity
+from config import conn, c, bot
 
-profanity.load_censor_words_from_file("./Soundy/banned_words.txt")
-conn = sqlite3.connect('./data/soundy.db')
-c = conn.cursor() # create a cursor
-# create a table with the following values guild id, musical channel, bully channel, wise channel, general channel
-c.execute('''CREATE TABLE IF NOT EXISTS soundy (guild_id text, musical_channel integer, bully_channel integer, wise_channel integer, welcome_channel integer, api_key text, welcome_message text, leave_message text,  western_channel integer)''')
-
-
-from discord import Intents # to use intents
-intents = Intents.all() # to use all intents
-intents.message_content = True
-
-logging.basicConfig(level=logging.INFO) # log errors
+profanity.load_censor_words_from_file("./moderation/banned_words.txt")
 
 from discord.commands import option # to use options
 
 from dotenv import load_dotenv # to load the token from a .env file
 load_dotenv() # load the .env file
 token = os.getenv('TOKEN') # get the token from the .env file
-openai_apikey = os.getenv('OPENAI_APIKEY')
+
+models = ["davinci", "chatGPT"]
 
 
 
 #Commands ###############################################################################################################################################################
 
 
-bot = discord.Bot(intents=intents) # create a new bot
 
 #Ping Command
 @bot.command(name='ping', description='Responds with pong') # name and description are optional
@@ -157,21 +146,23 @@ async def timeout(ctx, member: discord.Member):
     await member.timeout()
     await ctx.respond(f"{member.mention} has been timed out from the server!", ephemeral = True)
     
-# Bot moderation commands
-@bot.command(name="banbot", description="Bans a user from using the bot.")
+
+# Set Model
+async def autocomplete(ctx: discord.AutocompleteContext):
+    return [model for model in models if model.startswith(ctx.value)]
+@bot.command(name="setmodel", description="Select the model you want to use")
+@discord.option(name="model", description="The model you want to use", required=False, autocomplete=autocomplete)
 @default_permissions(administrator=True)
-async def banbot(ctx, member: discord.Member):
-    c.execute("INSERT INTO banned VALUES (?)", (member.id,))
+async def model(ctx: discord.ApplicationContext, model: str = "davinci"):
+    try: 
+        c.execute("SELECT * FROM model WHERE guild_id = ?", (ctx.guild.id,))
+        data = c.fetchone()[1]
+    except:
+        data = None
+    if data is None: c.execute("INSERT INTO model VALUES (?, ?)", (ctx.guild.id, model))
+    else: c.execute("UPDATE model SET model_name = ? WHERE guild_id = ?", (model, ctx.guild.id))
     conn.commit()
-    await ctx.respond(f"{member.mention} has been banned from using the bot!", ephemeral = True)
-    
-@bot.command(name="unbanbot", description="Unbans a user from using the bot.")
-@default_permissions(administrator=True)
-async def unbanbot(ctx, member: discord.Member):
-    c.execute("DELETE FROM banned WHERE user_id = ?", (member.id,))
-    conn.commit()
-    await ctx.respond(f"{member.mention} has been unbanned from using the bot!", ephemeral = True)
-    
+    await ctx.respond("Model selected!", ephemeral=True)
 
 
 #Events ###############################################################################################################################################################
@@ -234,6 +225,8 @@ helloes = ["hello", "hi", "hey"]
 
 @bot.event
 async def on_message(message):
+
+    
     try: guild_id = str(message.guild.id)
     except: return
     try: 
@@ -253,30 +246,26 @@ async def on_message(message):
     if message.channel.id == wise_channel:
         if message.content.startswith("-"): return 
         reply = await message.reply("Thinking of wise things to say...")
-        response = await chatgpt_response(message,1)
+        response = await respond(message,1)
         await reply.edit(response)
     
     if message.channel.id == bully_channel:
         if message.content.startswith("-"): return
         reply = await message.reply("Please stop bullying me...")
-        response = await chatgpt_response(message,2)
+        response = await respond(message,2)
         await reply.edit(response)          
        
     if message.channel.id == music_channel:
         if message.content.startswith("-"): return
         reply = await message.reply("Ayo, thinking...")
-        response = await chatgpt_response(message,3)
+        response = await respond(message,3)
         await reply.edit(response)      
         
     if message.channel.id == western_channel:
         if message.content.startswith("-"): return
         reply = await message.reply("Thinking partner...")
-        response = await chatgpt_response(message,4)
+        response = await respond(message,4)
         await reply.edit(response)                
-    
-    if profanity.contains_profanity(message.content.lower()):
-        await message.delete()
-        await message.channel.send(f"{message.author.mention}, I'm gonna have to wash your tongue with soap!")
 
     if message.author == bot.user: return # if the message is from the bot, ignore it
     
