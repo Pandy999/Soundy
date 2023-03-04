@@ -121,6 +121,62 @@ async def setleave(ctx, message: str):
         conn.commit()
     await ctx.respond("The member leave message has been set!", ephemeral = True) # send a message to the user    
 
+# Moderation Commands
+
+@bot.command(name="ban", description="Bans a user from the server.")
+@default_permissions(administrator=True)
+async def ban(ctx, member: discord.Member):
+    await member.ban()
+    await ctx.respond(f"{member.mention} has been banned from the server!", ephemeral = True)
+    
+@bot.command(name="unban", description="Unbans a user from the server.")
+@default_permissions(administrator=True)
+async def unban(ctx, member: discord.User):
+    await ctx.guild.unban(member)
+    await ctx.respond(f"{member.mention} has been unbanned from the server!", ephemeral = True)
+    
+    
+@bot.command(name="kick", description="Kicks a user from the server.")
+@default_permissions(administrator=True)
+async def kick(ctx, member: discord.Member):
+    await member.kick()
+    await ctx.responmd(f"{member.mention} has been kicked from the server!", ephemeral = True)
+    
+@bot.command(name="mute", description="Mutes a user from the server.")
+@default_permissions(administrator=True)
+async def mute(ctx, member: discord.Member):
+    await member.edit(mute=True)
+    await ctx.respond(f"{member.mention} has been muted from the server!", ephemeral = True)
+
+@bot.command(name="unmute", description="Mutes a user from the server.")
+@default_permissions(administrator=True)
+async def unmute(ctx, member: discord.Member):
+    await member.edit(mute=False)
+    await ctx.respond(f"{member.mention} has been unmuted from the server!", ephemeral = True)
+    
+@bot.command(name="timeout", description="Times out a user from the server.")
+@default_permissions(administrator=True)
+async def timeout(ctx, member: discord.Member):
+    await member.timeout()
+    await ctx.respond(f"{member.mention} has been timed out from the server!", ephemeral = True)
+    
+# Bot moderation commands
+@bot.command(name="banbot", description="Bans a user from using the bot.")
+@default_permissions(administrator=True)
+async def banbot(ctx, member: discord.Member):
+    c.execute("INSERT INTO banned VALUES (?)", (member.id,))
+    conn.commit()
+    await ctx.respond(f"{member.mention} has been banned from using the bot!", ephemeral = True)
+    
+@bot.command(name="unbanbot", description="Unbans a user from using the bot.")
+@default_permissions(administrator=True)
+async def unbanbot(ctx, member: discord.Member):
+    c.execute("DELETE FROM banned WHERE user_id = ?", (member.id,))
+    conn.commit()
+    await ctx.respond(f"{member.mention} has been unbanned from using the bot!", ephemeral = True)
+    
+
+
 async def autocomplete(ctx: discord.AutocompleteContext):
     return [model for model in models if model.startswith(ctx.value)]
 @bot.command(name="SetModel", description="Select the model you want to use")
@@ -324,3 +380,4 @@ async def on_ready():
     
 
 bot.run(token) # runs the bot
+

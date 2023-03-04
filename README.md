@@ -1,6 +1,8 @@
 # Soundy
 Soundy is a simple AI chatbot that has different personalities.
 
+* You can add the bot to your server without any further requirements [here](https://discord.com/api/oauth2/authorize?client_id=1072798110671175690&permissions=1627758526455&scope=bot).
+
 # Getting Started
 ## Requirements
 1. Python 3.10 installed on your machine. You can install it [here](https://www.python.org/downloads/). **BE SURE TO DOWNLOAD AND INSTALL THE CORRECT VERSION**.
@@ -13,7 +15,7 @@ Soundy is a simple AI chatbot that has different personalities.
 ```bash
 pip install -r requirements.txt
 ```
-3. Run the program with 
+6. Run the program with 
 ```bash
 python main.py
 ```
