@@ -2,17 +2,14 @@ import discord # to use pycord
 import os # to get the token from the .env file
 import logging # to log errors
 import openai # to use openai
-from chat_3 import chatgpt_response
+from chat import response as respond # to use the response function from chat.py
 from discord import default_permissions
 from better_profanity import profanity
-from config import conn, c
+from config import conn, c, bot
 
-profanity.load_censor_words_from_file("./Soundy/banned_words.txt")
+profanity.load_censor_words_from_file("./banned_words.txt")
 
 
-from discord import Intents # to use intents
-intents = Intents.all() # to use all intents
-intents.message_content = True
 
 logging.basicConfig(level=logging.INFO) # log errors
 
@@ -30,7 +27,6 @@ models = ["davinci", "chatGPT"]
 #Commands ###############################################################################################################################################################
 
 
-bot = discord.Bot(intents=intents) # create a new bot
 
 #Ping Command
 @bot.command(name='ping', description='Responds with pong') # name and description are optional
@@ -171,69 +167,23 @@ async def unbanbot(ctx, member: discord.Member):
     await ctx.respond(f"{member.mention} has been unbanned from using the bot!", ephemeral = True)
     
 
-
+# Set Model
 async def autocomplete(ctx: discord.AutocompleteContext):
     return [model for model in models if model.startswith(ctx.value)]
-@bot.command(name="SetModel", description="Select the model you want to use")
-@discord.option(name="Models", description="The model you want to use", required=False, autocomplete=autocomplete)
+@bot.command(name="setmodel", description="Select the model you want to use")
+@discord.option(name="model", description="The model you want to use", required=False, autocomplete=autocomplete)
 @default_permissions(administrator=True)
-async def model(self, ctx: discord.ApplicationContext, model: str = "davinci"):
+async def model(ctx: discord.ApplicationContext, model: str = "davinci"):
     try: 
         c.execute("SELECT * FROM model WHERE guild_id = ?", (ctx.guild.id,))
         data = c.fetchone()[1]
     except:
         data = None
-    if data is None: c.execute("INSERT INTO models VALUES (?, ?)", (ctx.guild.id, model))
+    if data is None: c.execute("INSERT INTO model VALUES (?, ?)", (ctx.guild.id, model))
     else: c.execute("UPDATE model SET model_name = ? WHERE guild_id = ?", (model, ctx.guild.id))
     conn.commit()
     await ctx.respond("Model selected!", ephemeral=True)
-# Moderation Commands
 
-@bot.command(name="ban", description="Bans a user from the server.")
-@default_permissions(administrator=True)
-async def ban(ctx, member: discord.Member):
-    await member.ban()
-    await ctx.respond(f"{member.mention} has been banned from the server!", ephemeral = True)
-    
-@bot.command(name="unban", description="Unbans a user from the server.")
-@default_permissions(administrator=True)
-async def unban(ctx, member: discord.User):
-    await ctx.guild.unban(member)
-    await ctx.respond(f"{member.mention} has been unbanned from the server!", ephemeral = True)
-    
-    
-@bot.command(name="kick", description="Kicks a user from the server.")
-@default_permissions(administrator=True)
-async def kick(ctx, member: discord.Member):
-    await member.kick()
-    await ctx.responmd(f"{member.mention} has been kicked from the server!", ephemeral = True)
-    
-@bot.command(name="mute", description="Mutes a user from the server.")
-@default_permissions(administrator=True)
-async def mute(ctx, member: discord.Member):
-    await member.edit(mute=True)
-    await ctx.respond(f"{member.mention} has been muted from the server!", ephemeral = True)
-
-@bot.command(name="unmute", description="Mutes a user from the server.")
-@default_permissions(administrator=True)
-async def unmute(ctx, member: discord.Member):
-    await member.edit(mute=False)
-    await ctx.respond(f"{member.mention} has been unmuted from the server!", ephemeral = True)
-    
-@bot.command(name="timeout", description="Times out a user from the server.")
-@default_permissions(administrator=True)
-async def timeout(ctx, member: discord.Member):
-    await member.timeout()
-    await ctx.respond(f"{member.mention} has been timed out from the server!", ephemeral = True)
-    
-# Bot moderation commands
-@bot.command(name="banbot", description="Bans a user from using the bot.")
-@default_permissions(administrator=True)
-async def banbot(ctx, member: discord.Member):
-    c.execute("INSERT INTO banned VALUES (?)", (member.id,))
-    conn.commit()
-    await ctx.respond(f"{member.mention} has been banned from using the bot!", ephemeral = True)
-    
 # Profanity Moderation commands
 @bot.command(name="addprofanity", description="Adds a word to the profanity filter.")
 @default_permissions(administrator=True)
@@ -333,25 +283,25 @@ async def on_message(message):
     if message.channel.id == wise_channel:
         if message.content.startswith("-"): return 
         reply = await message.reply("Thinking of wise things to say...")
-        response = await chatgpt_response(message,1)
+        response = await respond(message,1)
         await reply.edit(response)
     
     if message.channel.id == bully_channel:
         if message.content.startswith("-"): return
         reply = await message.reply("Please stop bullying me...")
-        response = await chatgpt_response(message,2)
+        response = await respond(message,2)
         await reply.edit(response)          
        
     if message.channel.id == music_channel:
         if message.content.startswith("-"): return
         reply = await message.reply("Ayo, thinking...")
-        response = await chatgpt_response(message,3)
+        response = await respond(message,3)
         await reply.edit(response)      
         
     if message.channel.id == western_channel:
         if message.content.startswith("-"): return
         reply = await message.reply("Thinking partner...")
-        response = await chatgpt_response(message,4)
+        response = await respond(message,4)
         await reply.edit(response)                
     
     if profanity.contains_profanity(message.content.lower()):
