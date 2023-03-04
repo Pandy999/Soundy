@@ -7,8 +7,6 @@ from discord import default_permissions
 from better_profanity import profanity
 from config import conn, c, bot
 
-profanity.load_censor_words_from_file("./moderation/banned_words.txt")
-
 from discord.commands import option # to use options
 
 from dotenv import load_dotenv # to load the token from a .env file
@@ -38,8 +36,8 @@ async def hello(ctx, your_name:str = ""): # say hello to the user
 @bot.command(name='help', description='Shows the help message') # name and description are optional
 async def ping(ctx):
    # await ctx.respond(f'Hello! I am a bot made by Pandy#0485. I am currently in development, so I don\'t have many commands.', ephemeral=True)
-    embed = discord.Embed(title="Help", description="Hello! I am a bot made by Pandy#0485 with the help of Paillat#7777.", color=discord.Color.nitro_pink())
-    embed.add_field(name="Commands", value="`/ping` - Responds with pong\n`/hello` - Says hello to a user\n`/help` - Shows the help message", inline=False)
+    embed = discord.Embed(title="Help", description="Hello! I am Soundy, made by Pandy#0485 with the help of Paillat#7777.", color=discord.Color.blurple())
+    embed.add_field(name="Commands", value="`/ping` - Responds with pong\n`/hello` - Says hello to a user\n`/help` - Shows the help message\n`/setapi`- Sets your OpenAI API key.\n`/setchannel` - Sets a channel for the bot to respond in\n`/setwelcome-/setleave` - Sets a custom welcome/leave message.\n`/setmodel` - Lets you choose the model of the chatbot.", inline=False)
     await ctx.respond(embed=embed, ephemeral=True)
 
 channels = ["musical", "bully", "wise", "welcome", "western"]
