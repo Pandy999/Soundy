@@ -2,15 +2,18 @@ import discord # to use pycord
 import os # to get the token from the .env file
 import logging # to log errors
 import openai # to use openai
-from chat import chatgpt_response
+from chat_3 import chatgpt_response
+from chat_turbo import turbo_response
 import sqlite3
 from discord import default_permissions
+from better_profanity import profanity
 
+profanity.load_censor_words_from_file("./Soundy/banned_words.txt")
 conn = sqlite3.connect('./data/soundy.db')
 c = conn.cursor() # create a cursor
 # create a table with the following values guild id, musical channel, bully channel, wise channel, general channel
 c.execute('''CREATE TABLE IF NOT EXISTS soundy (guild_id text, musical_channel integer, bully_channel integer, wise_channel integer, welcome_channel integer, api_key text, welcome_message text, leave_message text,  western_channel integer)''')
-
+c.execute('''CREATE TABLE IF NOT EXISTS models (guild_id text, model_name text)''')
 
 from discord import Intents # to use intents
 intents = Intents.all() # to use all intents
@@ -24,6 +27,8 @@ from dotenv import load_dotenv # to load the token from a .env file
 load_dotenv() # load the .env file
 token = os.getenv('TOKEN') # get the token from the .env file
 openai_apikey = os.getenv('OPENAI_APIKEY')
+
+models = ["davinci", "chatGPT"]
 
 
 
@@ -103,7 +108,7 @@ async def setwelcome(ctx, message: str):
     
 @bot.command(name="setleave", description="Sets the member leave message")
 @default_permissions(administrator=True)
-async def setwelcome(ctx, message: str):
+async def setleave(ctx, message: str):
     try: 
         c.execute("SELECT * FROM soundy WHERE guild_id = ?", (ctx.guild.id,)) # get the guild id from the database
         data = c.fetchone()
@@ -115,8 +120,87 @@ async def setwelcome(ctx, message: str):
         c.execute("UPDATE soundy SET leave_message = ? WHERE guild_id = ?", (message, str(ctx.guild.id))) # update the api key
         conn.commit()
     await ctx.respond("The member leave message has been set!", ephemeral = True) # send a message to the user    
-        
 
+async def autocomplete(ctx: discord.AutocompleteContext):
+    return [model for model in models if model.startswith(ctx.value)]
+@bot.command(name="SetModel", description="Select the model you want to use")
+@discord.option(name="Models", description="The model you want to use", required=False, autocomplete=autocomplete)
+@default_permissions(administrator=True)
+async def model(self, ctx: discord.ApplicationContext, model: str = "davinci"):
+    try: 
+        c.execute("SELECT * FROM model WHERE guild_id = ?", (ctx.guild.id,))
+        data = c.fetchone()[1]
+    except:
+        data = None
+    if data is None: c.execute("INSERT INTO models VALUES (?, ?)", (ctx.guild.id, model))
+    else: c.execute("UPDATE model SET model_name = ? WHERE guild_id = ?", (model, ctx.guild.id))
+    conn.commit()
+    await ctx.respond("Model changed!", ephemeral=True)
+# Moderation Commands
+
+@bot.command(name="ban", description="Bans a user from the server.")
+@default_permissions(administrator=True)
+async def ban(ctx, member: discord.Member):
+    await member.ban()
+    await ctx.respond(f"{member.mention} has been banned from the server!", ephemeral = True)
+    
+@bot.command(name="unban", description="Unbans a user from the server.")
+@default_permissions(administrator=True)
+async def unban(ctx, member: discord.User):
+    await ctx.guild.unban(member)
+    await ctx.respond(f"{member.mention} has been unbanned from the server!", ephemeral = True)
+    
+    
+@bot.command(name="kick", description="Kicks a user from the server.")
+@default_permissions(administrator=True)
+async def kick(ctx, member: discord.Member):
+    await member.kick()
+    await ctx.responmd(f"{member.mention} has been kicked from the server!", ephemeral = True)
+    
+@bot.command(name="mute", description="Mutes a user from the server.")
+@default_permissions(administrator=True)
+async def mute(ctx, member: discord.Member):
+    await member.edit(mute=True)
+    await ctx.respond(f"{member.mention} has been muted from the server!", ephemeral = True)
+
+@bot.command(name="unmute", description="Mutes a user from the server.")
+@default_permissions(administrator=True)
+async def unmute(ctx, member: discord.Member):
+    await member.edit(mute=False)
+    await ctx.respond(f"{member.mention} has been unmuted from the server!", ephemeral = True)
+    
+@bot.command(name="timeout", description="Times out a user from the server.")
+@default_permissions(administrator=True)
+async def timeout(ctx, member: discord.Member):
+    await member.timeout()
+    await ctx.respond(f"{member.mention} has been timed out from the server!", ephemeral = True)
+    
+# Bot moderation commands
+@bot.command(name="banbot", description="Bans a user from using the bot.")
+@default_permissions(administrator=True)
+async def banbot(ctx, member: discord.Member):
+    c.execute("INSERT INTO banned VALUES (?)", (member.id,))
+    conn.commit()
+    await ctx.respond(f"{member.mention} has been banned from using the bot!", ephemeral = True)
+    
+# Profanity Moderation commands
+@bot.command(name="addprofanity", description="Adds a word to the profanity filter.")
+@default_permissions(administrator=True)
+async def addprofanity(self, word: str):
+    with open("./Soundy/banned_words.txt", "a", encoding="utf-8") as f:
+        f.write("".join([f"{w}\n" for w in word]))
+        
+    profanity.load_censor_words_from_file("./Soundy/banned_words.txt")
+    
+@bot.command(name="removeprofanity", description="Removes a word from the profanity filter.")
+@default_permissions(administrator=True)
+async def removeprofanity(self, word: str):
+    with open("./Soundy/banned_words.txt", "r", encoding="utf-8") as f:
+        stored = [w.strip() for w in f.readlines()] 
+    with open("./Soundy/banned_words.txt", "w", encoding="utf-8") as f:
+        f.write("".join([f"{w}\n" for w in stored if w not in word]))
+    
+    profanity.load_censor_words_from_file("./Soundy/banned_words.txt")
 #Events ###############################################################################################################################################################
 
 
@@ -125,15 +209,12 @@ async def setwelcome(ctx, message: str):
 async def on_member_join(member: discord.Member):
     guild = member.guild 
     try: 
-        print("Member joined")
         c.execute("SELECT * FROM soundy WHERE guild_id = ?", (guild.id,)) # get the guild id from the database
-        print("Got data")
         data = c.fetchone()
-        print(data)
         channel = data[4]
-        print(channel)
         try: message = data[6] 
         except: message = f"Hello {member.mention}, you are **NOT** welcome to {guild.name}!"
+        if message == None: message = f"Hello {member.mention}, you are **NOT** welcome to {guild.name}!"
     except Exception as e: print(e); return
     channel = await bot.fetch_channel(channel)
     if message != f"Hello {member.mention}, you are **NOT** welcome to {guild.name}!":
@@ -149,6 +230,7 @@ async def on_member_remove(member: discord.Member):
         channel = data[4]
         try: message = data[7]
         except: message = f"Goodbye {member.name}, you were **not** wanted here in the first place!"
+        if message == None: message = f"Goodbye {member.name}, you were **not** wanted here in the first place!"
     except Exception as e: print(e); return
     channel = await bot.fetch_channel(channel)
     if message != f"Goodbye {member.name}, you were **not** wanted here in the first place!":
@@ -175,12 +257,12 @@ async def on_application_command_error(ctx: discord.ApplicationContext, error: E
 
 
 #On Message Events
-
-banned_words = ["carpet"]
 helloes = ["hello", "hi", "hey"]
 
 @bot.event
 async def on_message(message):
+
+    
     try: guild_id = str(message.guild.id)
     except: return
     try: 
@@ -221,10 +303,9 @@ async def on_message(message):
         response = await chatgpt_response(message,4)
         await reply.edit(response)                
     
-    for i in banned_words:
-        if message.content.lower().find(i) != -1:
-            await message.delete()
-            await message.channel.send(f"{message.author.mention}, I'm gonna have to wash your tongue with soap!")
+    if profanity.contains_profanity(message.content.lower()):
+        await message.delete()
+        await message.channel.send(f"{message.author.mention}, I'm gonna have to wash your tongue with soap!")
 
     if message.author == bot.user: return # if the message is from the bot, ignore it
     
@@ -232,17 +313,12 @@ async def on_message(message):
         if message.content.lower().find(o) != -1:
             await message.add_reaction('👋')
 
-
 #Bot Events
 
 @bot.event
 async def on_ready():
-    data = c.fetchone()
-    welcome_channel = data[4]
     print(f'Soundy has connected to Discord!') # print the bot's name when it connects
     await bot.change_presence(status=discord.Status.idle, activity=discord.Activity(type=discord.ActivityType.watching, name=f"you."))
-    channel = await bot.fetch_channel(welcome_channel)
-    await channel.send(f"Heh, I'm back boys.")
 
 
     
