@@ -13,7 +13,7 @@ import asyncio
 models = ["davinci", "chatGPT"]
 
 
-
+connections = {}
 #Commands ###############################################################################################################################################################
 
 
@@ -242,14 +242,40 @@ class Buttons(discord.ui.View):
         self.value = None
     
     
+    
+    @discord.ui.button(style=discord.ButtonStyle.danger, label="Stop Recording", custom_id="stop_recording")
+    async def stop_recording(self, button: discord.ui.Button, interaction: discord.Interaction, ctx):
+        if ctx.guild.id in connections:  # Check if the guild is in the cache.
+            vc = connections[ctx.guild.id]
+            vc.stop_recording()  # Stop recording, and call the callback (once_done).
+            del connections[ctx.guild.id]  # Remove the guild from the cache.
+            await ctx.delete()  # And delete.
+        else:
+            await ctx.respond("I am currently not recording here.")  # Respond with this if we aren't recording.
+        
     @discord.ui.button(style=discord.ButtonStyle.success, label="Start Recording", custom_id="start_recording")
     async def record(self, button: discord.ui.Button, interaction: discord.Interaction, ctx):
         await ctx.respond("Recording...")
+        voice = ctx.author.voice
+        if not voice:
+            await ctx.respond("You are not in a voice channel!", ephemeral=True)    
+            
+        async def once_done(sink: discord.sinks, channel: discord.TextChannel, *args):  # Our voice client already passes these in.
+            recorded_users = [  # A list of recorded users
+                f"<@{user_id}>"
+                for user_id, audio in sink.audio_data.items()
+            ]
+            await sink.vc.disconnect()  # Disconnect from the voice channel.
+            files = [discord.File(audio.file, f"{user_id}.{sink.encoding}") for user_id, audio in sink.audio_data.items()]  # List down the files.
+            await channel.send(f"finished recording audio for: {', '.join(recorded_users)}.", files=files)  # Send a message with the accumulated files.
+        vc = await voice.channel.connect()
+        vc.start_recording(
+            discord.sinks.WaveSink("recording.wav"),
+            once_done,
+            ctx.channel
+    )
         
-    @discord.ui.button(style=discord.ButtonStyle.danger, label="Stop Recording", custom_id="stop_recording")
-    async def stop_record(self, button: discord.ui.Button, interaction: discord.Interaction, ctx):
-        await ctx.respond("Stopped Recording!")
-        
+
 @bot.command(name="record", description="Records your voice and sends it to openai")
 async def record(ctx):
     embed = discord.Embed(title="Ding Dong", color=discord.Color.blurple())
