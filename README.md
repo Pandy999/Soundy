@@ -27,4 +27,5 @@ For more information about the project, please refer to the [wiki](https://githu
 ## Support 
 
 If you have any questions or need help, please either file a [bug report](https://github.com/Pandy999/Soundy/issues/new/choose) or open a [discussion thread](https://github.com/Pandy999/Soundy/discussions).
-You can also join the Soundy support server at:
+
+You can also join the Soundy support server by clicking [here](https://discord.gg/33M9RBxZmF).
