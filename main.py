@@ -8,6 +8,7 @@ from discord.commands import option # to use options
 from dotenv import load_dotenv # to load the token from a .env file
 load_dotenv() # load the .env file
 token = os.getenv('TOKEN') # get the token from the .env file
+import asyncio
 
 models = ["davinci", "chatGPT"]
 
@@ -31,7 +32,6 @@ async def hello(ctx, your_name:str = ""): # say hello to the user
 #Help Command
 @bot.command(name='help', description='Shows the help message') # name and description are optional
 async def ping(ctx):
-   # await ctx.respond(f'Hello! I am a bot made by Pandy#0485. I am currently in development, so I don\'t have many commands.', ephemeral=True)
     embed = discord.Embed(title="Help", description="Hello! I am Soundy, made by Pandy#0485 with the help of Paillat#7777.", color=discord.Color.blurple())
     embed.add_field(name="Commands", value="`/ping` - Responds with pong\n`/hello` - Says hello to a user\n`/help` - Shows the help message\n`/setapi`- Sets your OpenAI API key.\n`/setchannel` - Sets a channel for the bot to respond in\n`/setwelcome-/setleave` - Sets a custom welcome/leave message.\n`/setmodel` - Lets you choose the model of the chatbot.", inline=False)
     await ctx.respond(embed=embed, ephemeral=True)
@@ -212,6 +212,50 @@ async def on_application_command_error(ctx: discord.ApplicationContext, error: E
     else:
         embed = discord.Embed(title="Help", description="An unknown error occured; please try again later. If the error persists, you can contact us in our support server: https://discord.gg/zN67eGzxZC. Please send the following LOGS to the support server: ```py\n"+str(error)+"```", color=discord.Color.nitro_pink())
         await ctx.respond(embed=embed, ephemeral=True)
+        
+        
+#Voice Channel Events  
+@bot.command(name="joinvoice", description="Joins the voice channel you are in")
+async def joinvoice(ctx):
+    if ctx.author.voice is None: return await ctx.respond("You are not in a voice channel!", ephemeral=True)
+    channel = ctx.author.voice.channel
+    await channel.connect()
+    await ctx.respond("Joined voice channel!", ephemeral=True)  
+
+@bot.command(name="leavevoice", description="Leaves the voice channel it is in")
+async def leavevoice(ctx):
+    if ctx.guild.voice_client is None: return await ctx.respond("I am not in a voice channel!", ephemeral=True)
+    await ctx.guild.voice_client.disconnect(force=True)
+    await ctx.respond("Left voice channel!", ephemeral=True)     
+        
+@bot.event
+async def on_voice_channel_leave(member: discord.Member, channel: discord.VoiceChannel):
+    if member == bot.user:
+        if len(channel.members) == 0:
+            await channel.guild.voice_client.disconnect(force=True)
+            
+            
+            
+class Buttons(discord.ui.View):
+    def __init__(self):
+        super().__init__()
+        self.value = None
+    
+    
+    @discord.ui.button(style=discord.ButtonStyle.success, label="Start Recording", custom_id="start_recording")
+    async def record(self, button: discord.ui.Button, interaction: discord.Interaction, ctx):
+        await ctx.respond("Recording...")
+        
+    @discord.ui.button(style=discord.ButtonStyle.danger, label="Stop Recording", custom_id="stop_recording")
+    async def stop_record(self, button: discord.ui.Button, interaction: discord.Interaction, ctx):
+        await ctx.respond("Stopped Recording!")
+        
+@bot.command(name="record", description="Records your voice and sends it to openai")
+async def record(ctx):
+    embed = discord.Embed(title="Ding Dong", color=discord.Color.blurple())
+    embed.add_field(name="", value="", inline=False)
+    await ctx.respond(embed=embed, ephemeral=False, view=Buttons())
+
 
 
 #On Message Events
