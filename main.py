@@ -9,6 +9,7 @@ from dotenv import load_dotenv # to load the token from a .env file
 load_dotenv() # load the .env file
 token = os.getenv('TOKEN') # get the token from the .env file
 import asyncio
+from discord.ui import Button, View 
 
 models = ["davinci", "chatGPT"]
 
@@ -236,26 +237,17 @@ async def on_voice_channel_leave(member: discord.Member, channel: discord.VoiceC
             
             
             
-class Buttons(discord.ui.View):
-    def __init__(self):
-        super().__init__()
-        self.value = None
+            
+            
+ 
+
+@bot.command(description="Start recording")
+async def record(ctx):
+    noButton = Button(label="Stop Recording", style=discord.ButtonStyle.red)
+    yesButton = Button(label="Record", style=discord.ButtonStyle.green)
     
-    
-    
-    @discord.ui.button(style=discord.ButtonStyle.danger, label="Stop Recording", custom_id="stop_recording")
-    async def stop_recording(self, button: discord.ui.Button, interaction: discord.Interaction, ctx):
-        if ctx.guild.id in connections:  # Check if the guild is in the cache.
-            vc = connections[ctx.guild.id]
-            vc.stop_recording()  # Stop recording, and call the callback (once_done).
-            del connections[ctx.guild.id]  # Remove the guild from the cache.
-            await ctx.delete()  # And delete.
-        else:
-            await ctx.respond("I am currently not recording here.")  # Respond with this if we aren't recording.
-        
-    @discord.ui.button(style=discord.ButtonStyle.success, label="Start Recording", custom_id="start_recording")
-    async def record(self, button: discord.ui.Button, interaction: discord.Interaction, ctx):
-        await ctx.respond("Recording...")
+    async def yesButton_callback(interaction):
+    await ctx.respond("Recording...")
         voice = ctx.author.voice
         if not voice:
             await ctx.respond("You are not in a voice channel!", ephemeral=True)    
@@ -275,6 +267,22 @@ class Buttons(discord.ui.View):
             ctx.channel
     )
         
+
+    async def noButton_callback(interaction):
+        if ctx.guild.id in connections:  # Check if the guild is in the cache.
+            vc = connections[ctx.guild.id]
+            vc.stop_recording()  # Stop recording, and call the callback (once_done).
+            del connections[ctx.guild.id]  # Remove the guild from the cache.
+            await ctx.delete()  # And delete.
+        else:
+            await ctx.respond("I am currently not recording here.")  # Respond with this if we aren't recording.
+
+    noButton.callback = noButton_callback
+    yesButton.callback = yesButton_callback    
+    view = View()
+    view.add_item(yesButton)
+    view.add_item(noButton)
+
 
 @bot.command(name="record", description="Records your voice and sends it to openai")
 async def record(ctx):
