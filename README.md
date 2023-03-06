@@ -1,5 +1,5 @@
 # Soundy
-Soundy is a simple AI chatbot that has different personalities.
+Soundy is a simple AI chatbot that has different personalities and use cases.
 
 * You can add the bot to your server without any further requirements [here](https://discord.com/api/oauth2/authorize?client_id=1072798110671175690&permissions=1627758526455&scope=bot).
 
