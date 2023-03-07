@@ -235,39 +235,47 @@ async def on_voice_channel_leave(member: discord.Member, channel: discord.VoiceC
         if len(channel.members) == 0:
             await channel.guild.voice_client.disconnect(force=True)
             
-            
-            
-            
-            
- 
+connections = {}
+
+async def once_done(sink: discord.sinks, channel: discord.TextChannel, *args ):  # Our voice client already passes these in.
+    recorded_users = [  # A list of recorded users
+        f"<@{user_id}>"
+        for user_id, audio in sink.audio_data.items()]
+    
+    await sink.vc.disconnect()  # Disconnect from the voice channel.
+  #  try:
+        #files = [open(f'./{user_id}.{sink.encoding}', 'wb+')
+            #for user_id, audio in sink.audio_data.items()]
+      #  for f in files: f.write(audio.file)
+#        await channel.send(f"Finished recording audio for: {', '.join(recorded_users)}.", files=files) # I assume this takes file objects
+ #   finally:
+      #  for f in files: f.close()
+    for user_id, audio in sink.audio_data.items():
+        print(type(audio))
+        with open(f"output", "wb") as f:
+            f.write(audio.write())
+        await channel.send(f"Finished recording audio for: {', '.join(recorded_users)}.", file=discord.File(f"{user_id}.{sink.encoding}"))
+
 
 @bot.command(description="Start recording")
 async def record(ctx):
     noButton = Button(label="Stop Recording", style=discord.ButtonStyle.red)
     yesButton = Button(label="Record", style=discord.ButtonStyle.green)
     
+    voice = ctx.author.voice
+    if not voice :
+        return await ctx.respond("You are not in a voice channel!", ephemeral=True)
+    
     async def yesButton_callback(interaction):
-    await ctx.respond("Recording...")
-        voice = ctx.author.voice
-        if not voice:
-            await ctx.respond("You are not in a voice channel!", ephemeral=True)    
-            
-        async def once_done(sink: discord.sinks, channel: discord.TextChannel, *args):  # Our voice client already passes these in.
-            recorded_users = [  # A list of recorded users
-                f"<@{user_id}>"
-                for user_id, audio in sink.audio_data.items()
-            ]
-            await sink.vc.disconnect()  # Disconnect from the voice channel.
-            files = [discord.File(audio.file, f"{user_id}.{sink.encoding}") for user_id, audio in sink.audio_data.items()]  # List down the files.
-            await channel.send(f"finished recording audio for: {', '.join(recorded_users)}.", files=files)  # Send a message with the accumulated files.
+        await ctx.respond("Recording...") 
         vc = await voice.channel.connect()
+        connections.update({ctx.guild.id: vc})
         vc.start_recording(
-            discord.sinks.WaveSink("recording.wav"),
-            once_done,
-            ctx.channel
-    )
-        
-
+        discord.sinks.WaveSink(),
+        once_done,
+        ctx.channel 
+        )
+            
     async def noButton_callback(interaction):
         if ctx.guild.id in connections:  # Check if the guild is in the cache.
             vc = connections[ctx.guild.id]
@@ -282,13 +290,9 @@ async def record(ctx):
     view = View()
     view.add_item(yesButton)
     view.add_item(noButton)
+    await ctx.respond("Do you want to record?", view=view)
 
 
-@bot.command(name="record", description="Records your voice and sends it to openai")
-async def record(ctx):
-    embed = discord.Embed(title="Ding Dong", color=discord.Color.blurple())
-    embed.add_field(name="", value="", inline=False)
-    await ctx.respond(embed=embed, ephemeral=False, view=Buttons())
 
 
 
