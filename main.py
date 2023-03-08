@@ -237,23 +237,16 @@ async def on_voice_channel_leave(member: discord.Member, channel: discord.VoiceC
             
 connections = {}
 
-async def once_done(sink: discord.sinks, channel: discord.TextChannel, *args ):  # Our voice client already passes these in.
+async def once_done(sink: discord.sinks, channel: discord.TextChannel, *args, ):  # Our voice client already passes these in.
     recorded_users = [  # A list of recorded users
         f"<@{user_id}>"
         for user_id, audio in sink.audio_data.items()]
     
     await sink.vc.disconnect()  # Disconnect from the voice channel.
-  #  try:
-        #files = [open(f'./{user_id}.{sink.encoding}', 'wb+')
-            #for user_id, audio in sink.audio_data.items()]
-      #  for f in files: f.write(audio.file)
-#        await channel.send(f"Finished recording audio for: {', '.join(recorded_users)}.", files=files) # I assume this takes file objects
- #   finally:
-      #  for f in files: f.close()
     for user_id, audio in sink.audio_data.items():
-        print(type(audio))
-        with open(f"output", "wb") as f:
-            f.write(audio.write())
+        with open(f'./{user_id}.{sink.encoding}', 'wb+') as f:
+            f.write(audio.file.read())
+            f.close()
         await channel.send(f"Finished recording audio for: {', '.join(recorded_users)}.", file=discord.File(f"{user_id}.{sink.encoding}"))
 
 
