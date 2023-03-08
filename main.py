@@ -244,13 +244,17 @@ async def once_done(sink: discord.sinks, channel: discord.TextChannel, *args, ):
     
     await sink.vc.disconnect()  # Disconnect from the voice channel.
     for user_id, audio in sink.audio_data.items():
-        with open(f'./{user_id}.{sink.encoding}', 'wb+') as f:
+        with open(f'./Recordings/{user_id}.{sink.encoding}', 'wb+') as f:
             f.write(audio.file.read())
             f.close()
+            def transcribe(audio):
+                audio_file= open('./recordings/{user_id}.{sink.encoding}')
+                transcript = openai.Audio.transcrive("whsiper-1", audio_file)
+                print(transcript)
         await channel.send(f"Finished recording audio for: {', '.join(recorded_users)}.", file=discord.File(f"{user_id}.{sink.encoding}"))
 
 
-@bot.command(description="Start recording")
+@bot.command(name="record", description="Start recording")
 async def record(ctx):
     noButton = Button(label="Stop Recording", style=discord.ButtonStyle.red)
     yesButton = Button(label="Record", style=discord.ButtonStyle.green)
@@ -284,7 +288,6 @@ async def record(ctx):
     view.add_item(yesButton)
     view.add_item(noButton)
     await ctx.respond("Do you want to record?", view=view)
-
 
 
 
