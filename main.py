@@ -237,21 +237,34 @@ async def on_voice_channel_leave(member: discord.Member, channel: discord.VoiceC
             
 connections = {}
 
-async def once_done(sink: discord.sinks, channel: discord.TextChannel, *args, ):  # Our voice client already passes these in.
+async def once_done(sink: discord.sinks, channel: discord.TextChannel, *args):  # Our voice client already passes these in.
     recorded_users = [  # A list of recorded users
         f"<@{user_id}>"
         for user_id, audio in sink.audio_data.items()]
     
     await sink.vc.disconnect()  # Disconnect from the voice channel.
     for user_id, audio in sink.audio_data.items():
+        
         with open(f'./Recordings/{user_id}.{sink.encoding}', 'wb+') as f:
             f.write(audio.file.read())
-            f.close()
-            def transcribe(audio):
-                audio_file= open('./recordings/{user_id}.{sink.encoding}')
-                transcript = openai.Audio.transcrive("whsiper-1", audio_file)
-                print(transcript)
-        await channel.send(f"Finished recording audio for: {', '.join(recorded_users)}.", file=discord.File(f"{user_id}.{sink.encoding}"))
+        with open(f"./prompts/chatGPT/western.txt", "r") as f:
+            prompt = f.read()
+        messages=[]
+        file= open(f'./Recordings/{user_id}.{sink.encoding}', "rb")
+        transcription = openai.Audio.transcribe("whisper-1", file)
+        messages.append({"role":"user", "name":"system", "content": prompt})
+        print(transcription)
+        messages.append({"role":"user", "content": transcription["text"]})
+        response = await openai.ChatCompletion.acreate(
+            model="gpt-3.5-turbo",
+            messages=messages
+        )
+        response = response["choices"][0]["message"]["content"]
+        print(response)
+        f.close()
+    await channel.send(response)
+
+
 
 
 @bot.command(name="record", description="Start recording")
@@ -264,7 +277,7 @@ async def record(ctx):
         return await ctx.respond("You are not in a voice channel!", ephemeral=True)
     
     async def yesButton_callback(interaction):
-        await ctx.respond("Recording...") 
+        await ctx.respond("Listening, partner...", delete_after=5, ephemeral=True)
         vc = await voice.channel.connect()
         connections.update({ctx.guild.id: vc})
         vc.start_recording(
