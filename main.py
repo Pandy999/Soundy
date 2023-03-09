@@ -8,15 +8,12 @@ from discord.commands import option # to use options
 from dotenv import load_dotenv # to load the token from a .env file
 load_dotenv() # load the .env file
 token = os.getenv('TOKEN') # get the token from the .env file
-import asyncio
 from discord.ui import Button, View 
-
 models = ["davinci", "chatGPT"]
 
 
 connections = {}
 #Commands ###############################################################################################################################################################
-
 
 
 #Ping Command
@@ -163,6 +160,8 @@ async def model(ctx: discord.ApplicationContext, model: str = "davinci"):
 #Events ###############################################################################################################################################################
 
 
+
+
 #Member Join and Leave Events
 @bot.event
 async def on_member_join(member: discord.Member):
@@ -229,11 +228,6 @@ async def leavevoice(ctx):
     await ctx.guild.voice_client.disconnect(force=True)
     await ctx.respond("Left voice channel!", ephemeral=True)     
         
-@bot.event
-async def on_voice_channel_leave(member: discord.Member, channel: discord.VoiceChannel):
-    if member == bot.user:
-        if len(channel.members) == 0:
-            await channel.guild.voice_client.disconnect(force=True)
             
 connections = {}
 
@@ -263,14 +257,17 @@ async def once_done(sink: discord.sinks, channel: discord.TextChannel, *args):  
         print(response)
         f.close()
     await channel.send(response)
+    
 
 
 
 
-@bot.command(name="record", description="Start recording")
+
+
+@bot.command(name="listen", description="Start Listening")
 async def record(ctx):
-    noButton = Button(label="Stop Recording", style=discord.ButtonStyle.red)
-    yesButton = Button(label="Record", style=discord.ButtonStyle.green)
+    noButton = Button(label="Stop Listening", style=discord.ButtonStyle.red)
+    yesButton = Button(label="Listen", style=discord.ButtonStyle.green)
     
     voice = ctx.author.voice
     if not voice :
@@ -300,7 +297,8 @@ async def record(ctx):
     view = View()
     view.add_item(yesButton)
     view.add_item(noButton)
-    await ctx.respond("Do you want to record?", view=view)
+    await ctx.respond("Do you want me to listen?", view=view)
+
 
 
 
@@ -365,8 +363,6 @@ async def on_ready():
     print(f'Soundy has connected to Discord!') # print the bot's name when it connects
     await bot.change_presence(status=discord.Status.idle, activity=discord.Activity(type=discord.ActivityType.watching, name=f"you."))
 
-
-    
-
 bot.run(token) # runs the bot
+
 
