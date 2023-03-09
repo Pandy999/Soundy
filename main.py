@@ -8,13 +8,12 @@ from discord.commands import option # to use options
 from dotenv import load_dotenv # to load the token from a .env file
 load_dotenv() # load the .env file
 token = os.getenv('TOKEN') # get the token from the .env file
-
+from discord.ui import Button, View 
 models = ["davinci", "chatGPT"]
 
 
-
+connections = {}
 #Commands ###############################################################################################################################################################
-
 
 
 #Ping Command
@@ -31,7 +30,6 @@ async def hello(ctx, your_name:str = ""): # say hello to the user
 #Help Command
 @bot.command(name='help', description='Shows the help message') # name and description are optional
 async def ping(ctx):
-   # await ctx.respond(f'Hello! I am a bot made by Pandy#0485. I am currently in development, so I don\'t have many commands.', ephemeral=True)
     embed = discord.Embed(title="Help", description="Hello! I am Soundy, made by Pandy#0485 with the help of Paillat#7777.", color=discord.Color.blurple())
     embed.add_field(name="Commands", value="`/ping` - Responds with pong\n`/hello` - Says hello to a user\n`/help` - Shows the help message\n`/setapi`- Sets your OpenAI API key.\n`/setchannel` - Sets a channel for the bot to respond in\n`/setwelcome-/setleave` - Sets a custom welcome/leave message.\n`/setmodel` - Lets you choose the model of the chatbot.", inline=False)
     await ctx.respond(embed=embed, ephemeral=True)
@@ -162,6 +160,8 @@ async def model(ctx: discord.ApplicationContext, model: str = "davinci"):
 #Events ###############################################################################################################################################################
 
 
+
+
 #Member Join and Leave Events
 @bot.event
 async def on_member_join(member: discord.Member):
@@ -212,6 +212,95 @@ async def on_application_command_error(ctx: discord.ApplicationContext, error: E
     else:
         embed = discord.Embed(title="Help", description="An unknown error occured; please try again later. If the error persists, you can contact us in our support server: https://discord.gg/zN67eGzxZC. Please send the following LOGS to the support server: ```py\n"+str(error)+"```", color=discord.Color.nitro_pink())
         await ctx.respond(embed=embed, ephemeral=True)
+        
+        
+#Voice Channel Events  
+@bot.command(name="joinvoice", description="Joins the voice channel you are in")
+async def joinvoice(ctx):
+    if ctx.author.voice is None: return await ctx.respond("You are not in a voice channel!", ephemeral=True)
+    channel = ctx.author.voice.channel
+    await channel.connect()
+    await ctx.respond("Joined voice channel!", ephemeral=True)  
+
+@bot.command(name="leavevoice", description="Leaves the voice channel it is in")
+async def leavevoice(ctx):
+    if ctx.guild.voice_client is None: return await ctx.respond("I am not in a voice channel!", ephemeral=True)
+    await ctx.guild.voice_client.disconnect(force=True)
+    await ctx.respond("Left voice channel!", ephemeral=True)     
+        
+            
+connections = {}
+
+async def once_done(sink: discord.sinks, channel: discord.TextChannel, *args):  # Our voice client already passes these in.
+    recorded_users = [  # A list of recorded users
+        f"<@{user_id}>"
+        for user_id, audio in sink.audio_data.items()]
+    
+    await sink.vc.disconnect()  # Disconnect from the voice channel.
+    for user_id, audio in sink.audio_data.items():
+        
+        with open(f'./Recordings/{user_id}.{sink.encoding}', 'wb+') as f:
+            f.write(audio.file.read())
+        with open(f"./prompts/chatGPT/western.txt", "r") as f:
+            prompt = f.read()
+        messages=[]
+        file= open(f'./Recordings/{user_id}.{sink.encoding}', "rb")
+        transcription = openai.Audio.transcribe("whisper-1", file)
+        messages.append({"role":"user", "name":"system", "content": prompt})
+        print(transcription)
+        messages.append({"role":"user", "content": transcription["text"]})
+        response = await openai.ChatCompletion.acreate(
+            model="gpt-3.5-turbo",
+            messages=messages
+        )
+        response = response["choices"][0]["message"]["content"]
+        print(response)
+        f.close()
+    await channel.send(response)
+    
+
+
+
+
+
+
+@bot.command(name="listen", description="Start Listening")
+async def record(ctx):
+    noButton = Button(label="Stop Listening", style=discord.ButtonStyle.red)
+    yesButton = Button(label="Listen", style=discord.ButtonStyle.green)
+    
+    voice = ctx.author.voice
+    if not voice :
+        return await ctx.respond("You are not in a voice channel!", ephemeral=True)
+    
+    async def yesButton_callback(interaction):
+        await ctx.respond("Listening, partner...", delete_after=5, ephemeral=True)
+        vc = await voice.channel.connect()
+        connections.update({ctx.guild.id: vc})
+        vc.start_recording(
+        discord.sinks.WaveSink(),
+        once_done,
+        ctx.channel 
+        )
+            
+    async def noButton_callback(interaction):
+        if ctx.guild.id in connections:  # Check if the guild is in the cache.
+            vc = connections[ctx.guild.id]
+            vc.stop_recording()  # Stop recording, and call the callback (once_done).
+            del connections[ctx.guild.id]  # Remove the guild from the cache.
+            await ctx.delete()  # And delete.
+        else:
+            await ctx.respond("I am currently not recording here.")  # Respond with this if we aren't recording.
+
+    noButton.callback = noButton_callback
+    yesButton.callback = yesButton_callback    
+    view = View()
+    view.add_item(yesButton)
+    view.add_item(noButton)
+    await ctx.respond("Do you want me to listen?", view=view)
+
+
+
 
 
 #On Message Events
@@ -274,8 +363,6 @@ async def on_ready():
     print(f'Soundy has connected to Discord!') # print the bot's name when it connects
     await bot.change_presence(status=discord.Status.idle, activity=discord.Activity(type=discord.ActivityType.watching, name=f"you."))
 
-
-    
-
 bot.run(token) # runs the bot
+
 
