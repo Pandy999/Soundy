@@ -8,7 +8,7 @@ def deleterecs():
     for f in files:
         os.remove(f)
 
-schedule.every(30).minutes.do(deleterecs)
+schedule.every(15).minutes.do(deleterecs)
     
 while True:
     schedule.run_pending()

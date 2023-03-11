@@ -11,7 +11,7 @@ token = os.getenv('TOKEN') # get the token from the .env file
 from discord.ui import Button, View 
 models = ["davinci", "chatGPT"]
 
-
+voice_states = {}
 connections = {}
 #Commands ###############################################################################################################################################################
 
@@ -237,8 +237,9 @@ async def once_done(sink: discord.sinks, channel: discord.TextChannel, *args):  
         for user_id, audio in sink.audio_data.items()]
     
     await sink.vc.disconnect()  # Disconnect from the voice channel.
+
     for user_id, audio in sink.audio_data.items():
-        
+        reply = await channel.send("Let me think about that partner...")
         with open(f'./Recordings/{user_id}.{sink.encoding}', 'wb+') as f:
             f.write(audio.file.read())
         with open(f"./prompts/chatGPT/western.txt", "r") as f:
@@ -246,7 +247,7 @@ async def once_done(sink: discord.sinks, channel: discord.TextChannel, *args):  
         messages=[]
         file= open(f'./Recordings/{user_id}.{sink.encoding}', "rb")
         transcription = openai.Audio.transcribe("whisper-1", file)
-        messages.append({"role":"user", "name":"system", "content": prompt})
+        messages.append({"name":"System","role": "user", "content": prompt})
         print(transcription)
         messages.append({"role":"user", "content": transcription["text"]})
         response = await openai.ChatCompletion.acreate(
@@ -256,50 +257,47 @@ async def once_done(sink: discord.sinks, channel: discord.TextChannel, *args):  
         response = response["choices"][0]["message"]["content"]
         print(response)
         f.close()
-    await channel.send(response)
-    
-
-
-
+    await reply.edit(response)
 
 
 
 @bot.command(name="listen", description="Start Listening")
 async def record(ctx):
-    noButton = Button(label="Stop Listening", style=discord.ButtonStyle.red)
-    yesButton = Button(label="Listen", style=discord.ButtonStyle.green)
-    
     voice = ctx.author.voice
     if not voice :
         return await ctx.respond("You are not in a voice channel!", ephemeral=True)
-    
-    async def yesButton_callback(interaction):
-        await ctx.respond("Listening, partner...", delete_after=5, ephemeral=True)
+    else:
         vc = await voice.channel.connect()
         connections.update({ctx.guild.id: vc})
+    await ctx.respond("I will start to listen.")
+
+    
+@bot.event
+async def on_voice_state_update(ctx, member, before, after):
+    self_mute = ctx.author.voice.self_mute
+    if before.self_mute == False and after.self_mute == True:
+        await ctx.respond("Listening, partner...", delete_after=5, ephemeral=True)
         vc.start_recording(
         discord.sinks.WaveSink(),
         once_done,
-        ctx.channel 
-        )
+    )
             
-    async def noButton_callback(interaction):
-        if ctx.guild.id in connections:  # Check if the guild is in the cache.
+    if before.self_mute == True and after.self_mute == False:
+        if ctx.guild.id in connections:
             vc = connections[ctx.guild.id]
-            vc.stop_recording()  # Stop recording, and call the callback (once_done).
-            del connections[ctx.guild.id]  # Remove the guild from the cache.
-            await ctx.delete()  # And delete.
-        else:
-            await ctx.respond("I am currently not recording here.")  # Respond with this if we aren't recording.
-
-    noButton.callback = noButton_callback
-    yesButton.callback = yesButton_callback    
-    view = View()
-    view.add_item(yesButton)
-    view.add_item(noButton)
-    await ctx.respond("Do you want me to listen?", view=view)
-
-
+            vc.stop_recording()
+            del connections[ctx.guild.id] 
+            await ctx.delete()
+            
+    if before.voice_state == after.voice_state:
+        return
+    
+    if before.voice_state != None and after.voice_state == None:
+        if ctx.guild.id in connections:
+            vc = connections[ctx.guild.id]
+            vc.stop_recording()
+            del connections[ctx.guild.id] 
+            await ctx.delete()
 
 
 
