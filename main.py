@@ -118,7 +118,7 @@ async def unban(ctx, member: discord.User):
 @default_permissions(administrator=True)
 async def kick(ctx, member: discord.Member):
     await member.kick()
-    await ctx.responmd(f"{member.mention} has been kicked from the server!", ephemeral = True)
+    await ctx.respond(f"{member.mention} has been kicked from the server!", ephemeral = True)
     
 @bot.command(name="mute", description="Mutes a user from the server.")
 @default_permissions(administrator=True)
@@ -273,31 +273,32 @@ async def record(ctx):
 
     
 @bot.event
-async def on_voice_state_update(ctx, member, before, after):
-    self_mute = ctx.author.voice.self_mute
+async def on_voice_state_update(member, before, after):
+    
+    self_mute = member.voice.self_mute
     if before.self_mute == False and after.self_mute == True:
-        await ctx.respond("Listening, partner...", delete_after=5, ephemeral=True)
+        await member.respond("Listening, partner...", delete_after=5, ephemeral=True)
         vc.start_recording(
         discord.sinks.WaveSink(),
         once_done,
     )
             
     if before.self_mute == True and after.self_mute == False:
-        if ctx.guild.id in connections:
-            vc = connections[ctx.guild.id]
+        if member.guild.id in connections:
+            vc = connections[member.guild.id]
             vc.stop_recording()
-            del connections[ctx.guild.id] 
-            await ctx.delete()
+            del connections[member.guild.id] 
+            await member.delete()
             
     if before.voice_state == after.voice_state:
         return
     
     if before.voice_state != None and after.voice_state == None:
-        if ctx.guild.id in connections:
-            vc = connections[ctx.guild.id]
+        if member.guild.id in connections:
+            vc = connections[member.guild.id]
             vc.stop_recording()
-            del connections[ctx.guild.id] 
-            await ctx.delete()
+            del connections[member.guild.id] 
+            await member.delete()
 
 
 
